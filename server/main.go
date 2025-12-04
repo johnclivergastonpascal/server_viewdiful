@@ -32,10 +32,13 @@ var videos []VideoInfo
 // Cargar JSON a memoria
 // ----------------------
 func loadJSON() {
-	// Nota: Asumo que "../videos.json" es correcto para tu estructura de proyecto.
-	file, err := os.ReadFile("../videos.json")
+	file, err := os.ReadFile("videos.json")
 	if err != nil {
-		log.Fatalf("Error leyendo videos.json: %v", err)
+		// Prueba segunda ruta (para desarrollo local)
+		file, err = os.ReadFile("../videos.json")
+		if err != nil {
+			log.Fatalf("Error leyendo videos.json: %v", err)
+		}
 	}
 
 	err = json.Unmarshal(file, &videos)
