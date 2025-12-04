@@ -35,7 +35,7 @@ func loadJSON() {
 	file, err := os.ReadFile("videos.json")
 	if err != nil {
 		// Prueba segunda ruta (para desarrollo local)
-		file, err = os.ReadFile("../videos.json")
+		file, err = os.ReadFile("videos.json")
 		if err != nil {
 			log.Fatalf("Error leyendo videos.json: %v", err)
 		}
