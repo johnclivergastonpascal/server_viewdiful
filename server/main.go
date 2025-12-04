@@ -181,18 +181,15 @@ func sendJSON(w http.ResponseWriter, data interface{}) {
 func main() {
 	loadJSON()
 
-	// Crear el nuevo router de gorilla/mux
 	r := mux.NewRouter()
 
-	// La ruta dinámica /video/{id}
 	r.HandleFunc("/video/{id}", getSingleVideo).Methods("GET")
-
-	// Mantenemos las rutas existentes
 	r.HandleFunc("/videos", getPaginatedVideos).Methods("GET")
 	r.HandleFunc("/search", searchVideos).Methods("GET")
-	r.HandleFunc("/random", getRandom).Methods("GET") // Endpoint /random
+	r.HandleFunc("/random", getRandom).Methods("GET")
 
-	// Ahora el servidor usa el router de mux
-	log.Println("Servidor escuchando en http://localhost:8080 ...")
-	log.Fatal(http.ListenAndServe(":8080", r))
+	// Solo corregido el localhost
+	port := "8080"
+	log.Println("Servidor escuchando en http://localhost:" + port)
+	log.Fatal(http.ListenAndServe(":"+port, r))
 }
