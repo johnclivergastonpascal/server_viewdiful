@@ -1,7 +1,7 @@
 services:
   - type: web
-    name: notfliz
-    runtime: go
+    name: server_viewdiful
+    env: go
     rootDirectory: server
     buildCommand: go build -o app .
     startCommand: ./app
