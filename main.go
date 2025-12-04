@@ -146,7 +146,7 @@ func main() {
 
 	// Guardar JSON completo
 	js, _ := json.MarshalIndent(allVideos, "", "  ")
-	os.WriteFile("videos.json", js, 0644)
+	os.WriteFile("server/videos.json", js, 0644)
 	fmt.Println("\n🎉 ¡Listo! Se generó videos.json con todos los videos y thumbnails PNG.")
 }
 
