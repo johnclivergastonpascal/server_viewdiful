@@ -2,7 +2,6 @@ services:
   - type: web
     name: server_viewdiful
     env: go
-    rootDirectory: server_viewdiful/server
     buildCommand: go build -o app .
     startCommand: ./app
     plan: free
