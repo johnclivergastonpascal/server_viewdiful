@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/gorilla/mux" // Importar gorilla/mux
+	"github.com/gorilla/mux"
 )
 
 type Segment struct {
@@ -34,7 +34,6 @@ var videos []VideoInfo
 func loadJSON() {
 	file, err := os.ReadFile("videos.json")
 	if err != nil {
-		// Prueba segunda ruta (para desarrollo local)
 		file, err = os.ReadFile("videos.json")
 		if err != nil {
 			log.Fatalf("Error leyendo videos.json: %v", err)
@@ -49,7 +48,7 @@ func loadJSON() {
 	log.Println("videos.json cargado con éxito. Total videos:", len(videos))
 }
 
-// --- FUNCIÓN HELPER: Busca un video por ID ---
+// --- Buscar video por ID ---
 func findVideoByID(id string) *VideoInfo {
 	for _, v := range videos {
 		if strings.ToLower(v.ID) == strings.ToLower(id) {
@@ -60,15 +59,13 @@ func findVideoByID(id string) *VideoInfo {
 }
 
 // ----------------------
-// Endpoint: Video Único (Ahora usa /video/{id})
+// Endpoint: Video único
 // ----------------------
 func getSingleVideo(w http.ResponseWriter, r *http.Request) {
-	// Usar mux.Vars para obtener variables de la ruta (path)
 	vars := mux.Vars(r)
-	id := vars["id"] // El nombre debe coincidir con el definido en la ruta: /video/{id}
+	id := vars["id"]
 
 	if id == "" {
-		// Esto debería ser manejado por el router, pero es un buen chequeo de seguridad
 		http.Error(w, "Falta el parámetro 'id'", http.StatusBadRequest)
 		return
 	}
@@ -84,49 +81,40 @@ func getSingleVideo(w http.ResponseWriter, r *http.Request) {
 }
 
 // ----------------------
-// Endpoint: Videos Paginados (Optimizado)
-// Uso: /videos?page=0&limit=10
+// Endpoint: Videos paginados
 // ----------------------
 func getPaginatedVideos(w http.ResponseWriter, r *http.Request) {
-	// 1. Obtener y parsear parámetros
 	pageStr := r.URL.Query().Get("page")
 	limitStr := r.URL.Query().Get("limit")
 
 	page, errP := strconv.Atoi(pageStr)
 	limit, errL := strconv.Atoi(limitStr)
 
-	// Valores por defecto si los parámetros son inválidos o faltan
 	if errP != nil || page < 0 {
-		page = 0 // Primera página
+		page = 0
 	}
 	if errL != nil || limit <= 0 {
-		limit = 10 // Límite por defecto
+		limit = 10
 	}
 
-	// 2. Calcular índices de inicio y fin
 	startIdx := page * limit
 	endIdx := startIdx + limit
 
-	// Si el índice de inicio está fuera de los límites, no hay resultados.
 	if startIdx >= len(videos) {
 		sendJSON(w, []VideoInfo{})
 		return
 	}
 
-	// Si el índice final excede el tamaño total, ajustarlo.
 	if endIdx > len(videos) {
 		endIdx = len(videos)
 	}
 
-	// 3. Crear el subconjunto de videos
-	paginatedVideos := videos[startIdx:endIdx]
-
-	// 4. Enviar respuesta
-	sendJSON(w, paginatedVideos)
+	paginated := videos[startIdx:endIdx]
+	sendJSON(w, paginated)
 }
 
 // ----------------------
-// Endpoint: búsqueda
+// Endpoint: Búsqueda
 // ----------------------
 func searchVideos(w http.ResponseWriter, r *http.Request) {
 	q := strings.ToLower(r.URL.Query().Get("q"))
@@ -135,14 +123,11 @@ func searchVideos(w http.ResponseWriter, r *http.Request) {
 	var results []VideoInfo
 
 	for _, v := range videos {
-
-		// Búsqueda por ID exacta
 		if id != "" && strings.ToLower(v.ID) == id {
 			results = append(results, v)
 			break
 		}
 
-		// Búsqueda por texto en el título
 		if q != "" && strings.Contains(strings.ToLower(v.Title), q) {
 			results = append(results, v)
 		}
@@ -152,7 +137,7 @@ func searchVideos(w http.ResponseWriter, r *http.Request) {
 }
 
 // ----------------------
-// Endpoint: random (genera un video aleatorio)
+// Endpoint: Random
 // ----------------------
 func getRandom(w http.ResponseWriter, r *http.Request) {
 	if len(videos) == 0 {
@@ -160,26 +145,47 @@ func getRandom(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Utilizamos rand.Intn, el cual está inicializado de forma segura
-	// en Go 1.20+ sin necesidad de rand.NewSource(time.Now().UnixNano()) aquí.
 	randomVideo := videos[rand.Intn(len(videos))]
-
 	sendJSON(w, randomVideo)
 }
 
 // ----------------------
-// Helper JSON (CORS Activado para desarrollo)
+// Endpoint: Sitemap
+// ----------------------
+func getSitemap(w http.ResponseWriter, r *http.Request) {
+	baseURL := "https://viewdiful.vercel.app" // CAMBIA ESTO
+
+	w.Header().Set("Content-Type", "application/xml; charset=utf-8")
+
+	xml := `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">`
+
+	for _, v := range videos {
+		xml += `
+	<url>
+		<loc>` + baseURL + `/video/` + v.ID + `</loc>
+		<changefreq>daily</changefreq>
+		<priority>0.8</priority>
+	</url>`
+	}
+
+	xml += `
+</urlset>`
+
+	w.Write([]byte(xml))
+}
+
+// ----------------------
+// Helper JSON
 // ----------------------
 func sendJSON(w http.ResponseWriter, data interface{}) {
-	// 🔥 Activando CORS para permitir llamadas desde cualquier origen (uso en desarrollo)
 	w.Header().Set("Access-Control-Allow-Origin", "*")
-
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	json.NewEncoder(w).Encode(data)
 }
 
 // ----------------------
-// MAIN SERVER
+// MAIN
 // ----------------------
 func main() {
 	loadJSON()
@@ -190,8 +196,8 @@ func main() {
 	r.HandleFunc("/videos", getPaginatedVideos).Methods("GET")
 	r.HandleFunc("/search", searchVideos).Methods("GET")
 	r.HandleFunc("/random", getRandom).Methods("GET")
+	r.HandleFunc("/sitemap.xml", getSitemap).Methods("GET")
 
-	// Solo corregido el localhost
 	port := "8080"
 	log.Println("Servidor escuchando en http://localhost:" + port)
 	log.Fatal(http.ListenAndServe(":"+port, r))
