@@ -56,8 +56,6 @@ func main() {
 		"https://www.youtube.com/channel/UC5EQ8RBtLfPvZ-gEYqCBTmQ",
 		// CCAP peliculas
 		"https://www.youtube.com/channel/UCjeHAo1VKPLf2XvrK4oRAWA",
-		// Sofa romance
-		"https://www.youtube.com/channel/UCeMmjh75wimJzX_hhfSv78w",
 		// Tienda De peliculas 
 		"https://www.youtube.com/channel/UCzwmcuC5b2geM0RXIMHnBeQ",
 	}
