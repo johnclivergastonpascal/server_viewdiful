@@ -15,20 +15,12 @@ type Segment struct {
 	Duration int `json:"duracion_seg"`
 }
 
-type ChannelInfo struct {
-	ID      string `json:"id"`
-	Name    string `json:"nombre"`
-	URL     string `json:"url"`
-	IconURL string `json:"icono"`
-}
-
 type VideoInfo struct {
-	Channel   ChannelInfo `json:"canal"`
-	ID        string      `json:"id"`
-	Title     string      `json:"titulo"`
-	Duration  int         `json:"duracion_total_seg"`
-	Segments  []Segment   `json:"partes"`
-	Thumbnail string      `json:"thumbnail"`
+	ID        string    `json:"id"`
+	Title     string    `json:"titulo"`
+	Duration  int       `json:"duracion_total_seg"`
+	Segments  []Segment `json:"partes"`
+	Thumbnail string    `json:"thumbnail"`
 }
 
 // =========================
@@ -40,7 +32,7 @@ func loadExistingVideos(path string) ([]VideoInfo, map[string]bool) {
 
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return videos, exists // no existe el archivo
+		return videos, exists
 	}
 
 	json.Unmarshal(data, &videos)
@@ -54,12 +46,19 @@ func loadExistingVideos(path string) ([]VideoInfo, map[string]bool) {
 
 func main() {
 
-	// 🔥 LISTA DE CANALES (aunque se repitan, no duplicará videos)
+	// 🔥 LISTA DE CANALES
 	channels := []string{
+		// UniVerso Drama 
 		"https://www.youtube.com/channel/UC457QA5ZWKIQa3bFOcG3ZsQ",
-		"https://www.youtube.com/channel/UC457QA5ZWKIQa3bFOcG3ZsQ",
-		"https://www.youtube.com/channel/UC457QA5ZWKIQa3bFOcG3ZsQ",
-		"https://www.youtube.com/channel/UC457QA5ZWKIQa3bFOcG3ZsQ",
+		// Limon Drama 
+		"https://www.youtube.com/channel/UCi9zw_9H9nxxgYUKt_E-lRA",
+		// Dramalandia 
+		"https://www.youtube.com/channel/UC5EQ8RBtLfPvZ-gEYqCBTmQ",
+		// CCAP peliculas
+		"https://www.youtube.com/channel/UCjeHAo1VKPLf2XvrK4oRAWA",
+		// Sofa romance
+		"https://www.youtube.com/channel/UCeMmjh75wimJzX_hhfSv78w",
+		// Tienda De peliculas 
 		"https://www.youtube.com/channel/UCzwmcuC5b2geM0RXIMHnBeQ",
 	}
 
@@ -73,10 +72,6 @@ func main() {
 	}
 
 	for _, channelURL := range channels {
-
-		channelInfo := getChannelInfo(channelURL)
-		fmt.Println("\n📺 Canal:", channelInfo.Name)
-		fmt.Println("🖼️ Icono:", channelInfo.IconURL)
 
 		cmd := exec.Command(".\\yt-dlp.exe",
 			"--flat-playlist",
@@ -98,9 +93,8 @@ func main() {
 				continue
 			}
 
-			// ⏭️ SI YA EXISTE, NO SE PROCESA
 			if existingIDs[id] {
-				fmt.Println("⏭️  Video ya existe, se omite:", id)
+				fmt.Println("⏭️  Video ya existe:", id)
 				continue
 			}
 
@@ -119,7 +113,6 @@ func main() {
 			jsonOut, err := infoCmd.CombinedOutput()
 			if err != nil {
 				fmt.Println("❌ Error JSON video:", id)
-				fmt.Println(string(jsonOut))
 				continue
 			}
 
@@ -149,8 +142,6 @@ func main() {
 				"-frames:v", "1",
 				thumbnailFile,
 			)
-			ffmpegCmd.Stdout = os.Stdout
-			ffmpegCmd.Stderr = os.Stderr
 			ffmpegCmd.Run()
 
 			// 🔹 Segmentos de 120s
@@ -179,7 +170,6 @@ func main() {
 			}
 
 			allVideos = append(allVideos, VideoInfo{
-				Channel:   channelInfo,
 				ID:        id,
 				Title:     title,
 				Duration:  duration,
@@ -187,8 +177,7 @@ func main() {
 				Thumbnail: thumbnailFile,
 			})
 
-			existingIDs[id] = true // 👈 marcar como procesado
-
+			existingIDs[id] = true
 			fmt.Println("✅ OK:", title)
 		}
 	}
@@ -197,53 +186,7 @@ func main() {
 	os.MkdirAll("server", 0755)
 	os.WriteFile("server/videos.json", js, 0644)
 
-	fmt.Println("\n🎉 FINALIZADO: videos.json actualizado sin duplicados")
-}
-
-// =========================
-// INFO DEL CANAL + ICONO
-// =========================
-func getChannelInfo(channelURL string) ChannelInfo {
-
-	cmd := exec.Command(".\\yt-dlp.exe", "-j", channelURL)
-	out, err := cmd.Output()
-	if err != nil {
-		fmt.Println("❌ Error obteniendo info del canal")
-		return ChannelInfo{}
-	}
-
-	var data map[string]interface{}
-	json.Unmarshal(out, &data)
-
-	id, _ := data["channel_id"].(string)
-	name, _ := data["channel"].(string)
-	url, _ := data["channel_url"].(string)
-
-	icon := ""
-
-	if thumbs, ok := data["thumbnails"].([]interface{}); ok {
-		max := 0
-		for _, t := range thumbs {
-			thumb := t.(map[string]interface{})
-			w := 0
-			if width, ok := thumb["width"].(float64); ok {
-				w = int(width)
-			}
-			if w > max {
-				if u, ok := thumb["url"].(string); ok {
-					icon = u
-					max = w
-				}
-			}
-		}
-	}
-
-	return ChannelInfo{
-		ID:      id,
-		Name:    name,
-		URL:     url,
-		IconURL: icon,
-	}
+	fmt.Println("\n🎉 FINALIZADO: videos.json sin información de canal")
 }
 
 // =========================
